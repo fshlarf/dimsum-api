@@ -46,14 +46,13 @@ const {
   POSTGRES_DATABASE_NAME: postgresDatabaseName,
 } = process.env;
 
-app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
-
+app.use(bodyParser.urlencoded({ extended: true }));
 app.set("trust proxy", 1);
 
 const pgConfig = {
   host: postgresHost,
-  posrt: postgresPort,
+  port: postgresPort,
   user: postgresUsername,
   password: postgresPassword,
   database: postgresDatabaseName,
@@ -77,8 +76,9 @@ Promise.all([
       }),
       cookie: { maxAge: 30 * 24 * 60 * 60 * 1000 },
       secret: sessionSecret,
-      resave: true,
-      saveUninitialized: true,
+      resave: false,
+      saveUninitialized: false,
+      sameSite: "none",
     })
   );
   app.set("view engine", "ejs");

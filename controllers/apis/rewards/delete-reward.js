@@ -19,11 +19,12 @@ module.exports = function ({ pgClientPool }) {
           if (error) {
             return next(error);
           }
+          res.status(201);
+          return res.json({
+            message: `reward with ID: ${id} is deleted`,
+          });
         }
       );
-
-      res.status(201);
-      return res.json({ message: `reward with ID: ${reward.id} is deleted` });
     } catch (e) {
       res.locals.statusCode = 500;
       next(e);

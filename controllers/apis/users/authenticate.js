@@ -1,7 +1,6 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 // import jwt from "jsonwebtoken";
-const JWT_SECRET = "dimsum-secret";
 
 module.exports = function ({ pgClientPool }) {
   return async function (req, res, next) {
@@ -33,19 +32,17 @@ module.exports = function ({ pgClientPool }) {
         return res.status(403).json({ error: "wrong password" });
       }
 
-      const sessionUser = {
+      req.session.user = {
         id: user.id,
-        name: user.full_name,
+        name: user.name,
         phone: user.phone,
         email: user.email,
-        isBlocked: user.is_blocked,
+        isActive: user.is_active,
         sessionId: reqSessionId,
       };
-      const token = jwt.sign(sessionUser, JWT_SECRET);
-      req.session.user = sessionUser;
 
       res.status(200);
-      return res.json({ user: req.session.user, token });
+      return res.json({ user: req.session.user });
     } catch (e) {
       res.locals.statusCode = 500;
       next(e);
