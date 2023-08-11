@@ -99,6 +99,7 @@ Promise.all([
   app.post("/api/users", UserApi.AddUser(deps));
   app.get("/api/users", UserApi.GetUsers(deps));
   app.patch("/api/users/:id", UserApi.EditUser(deps));
+  app.delete("/api/users/:id", UserApi.DeleteUser(deps));
 
   // announcementApi
   app.post(
