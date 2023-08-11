@@ -60,11 +60,6 @@ module.exports = function ({ pgClientPool }) {
         existingImageFileName
       );
       try {
-        await fs.access(filePath, fs.constants.F_OK);
-      } catch (error) {
-        console.log("file not found: " + filePath);
-      }
-      try {
         await fs.unlink(filePath);
       } catch (error) {
         console.log("failed to delete file: " + filePath);

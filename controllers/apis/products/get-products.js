@@ -4,7 +4,7 @@ const convertSnakeToCamelCase = require("../../../helpers/utils");
 module.exports = function ({ pgClientPool }) {
   return async function (req, res, next) {
     try {
-      const { page, limit, search } = req.query;
+      const { page, limit, search, categoryId } = req.query;
       const { user } = req.session;
 
       if (!user) {
@@ -19,8 +19,13 @@ module.exports = function ({ pgClientPool }) {
       let getList;
       try {
         const result = await pgClientPool.query(
-          "SELECT * FROM products WHERE ($1::text IS NULL OR LOWER(name) LIKE LOWER($1)) LIMIT $2::int OFFSET $3::int",
-          [search ? `%${search}%` : null, queryLimit, offset]
+          "SELECT * FROM products WHERE ($1::text IS NULL OR LOWER(name) LIKE LOWER($1)) AND ($4::integer IS NULL OR category_id = $4) LIMIT $2::int OFFSET $3::int",
+          [
+            search ? `%${search}%` : null,
+            queryLimit,
+            offset,
+            categoryId ? categoryId : null,
+          ]
         );
         getList = result.rows;
       } catch (error) {
@@ -31,8 +36,8 @@ module.exports = function ({ pgClientPool }) {
       let total;
       try {
         const totalRes = await pgClientPool.query(
-          "SELECT COUNT(*) FROM products WHERE ($1::text IS NULL OR LOWER(name) LIKE LOWER($1))",
-          [search ? `%${search}%` : null]
+          "SELECT COUNT(*) FROM products WHERE ($1::text IS NULL OR LOWER(name) LIKE LOWER($1)) AND ($2::integer IS NULL OR category_id = $2)",
+          [search ? `%${search}%` : null, categoryId ? categoryId : null]
         );
         total = parseInt(totalRes.rows[0].count);
       } catch (error) {
