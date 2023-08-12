@@ -5,7 +5,7 @@ exports.shorthands = undefined;
 exports.up = (pgm) => {
   pgm.db.query(`
     INSERT INTO users (name, email, password, is_active, phone)
-    VALUES ('system', 'system@mail.com', '$2y$10$5vcbPwrtGblMlvS0LAy88.hFfP0vgvzlTG9x2/wL8WY1qDKG2aG2i', true, '62812345678');
+    VALUES ('system', 'system@mail.com', '$2b$10$vRcYPWhB5WFYMSjZnSVawufImnc11dMijoXTFg9knVCTv9LkmLFR6', true, '62812345678');
   `);
 };
 
