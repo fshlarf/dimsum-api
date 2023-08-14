@@ -7,6 +7,7 @@ const express = require("express");
 const connectPgSimple = require("connect-pg-simple");
 const multer = require("multer");
 const path = require("path");
+const cors = require("cors");
 // const morgan = require("morgan");
 
 // pages
@@ -46,6 +47,24 @@ const {
   POSTGRES_DATABASE_NAME: postgresDatabaseName,
 } = process.env;
 
+const whitelist = [
+  "https://produsendimsum.com",
+  "https://www.produsendimsum.com",
+  "https://admin.produsendimsum.com",
+  "https://www.admin.produsendimsum.com",
+  "http://localhost:13000",
+];
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (whitelist.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+  })
+);
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.set("trust proxy", 1);
