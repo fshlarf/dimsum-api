@@ -57,12 +57,14 @@ const whitelist = [
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (whitelist.includes(origin)) {
+      if (!origin || whitelist.includes(origin)) {
         callback(null, true);
       } else {
         callback(new Error("Not allowed by CORS"));
       }
     },
+    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+    allowedHeaders: "Content-Type,Authorization",
   })
 );
 app.use(bodyParser.json());
