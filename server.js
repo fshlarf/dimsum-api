@@ -7,7 +7,7 @@ const express = require("express");
 const connectPgSimple = require("connect-pg-simple");
 const multer = require("multer");
 const path = require("path");
-const cors = require("cors");
+// const cors = require("cors");
 // const morgan = require("morgan");
 
 // pages
@@ -47,27 +47,27 @@ const {
   POSTGRES_DATABASE_NAME: postgresDatabaseName,
 } = process.env;
 
-const whitelist = [
-  "https://produsendimsum.com",
-  "https://www.produsendimsum.com",
-  "https://admin.produsendimsum.com",
-  "https://www.admin.produsendimsum.com",
-  "http://localhost:13000",
-];
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      if (!origin || whitelist.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
-    methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
-    allowedHeaders: "Content-Type,Authorization",
-    credentials: true,
-  })
-);
+// const whitelist = [
+//   "https://produsendimsum.com",
+//   "https://www.produsendimsum.com",
+//   "https://admin.produsendimsum.com",
+//   "https://www.admin.produsendimsum.com",
+//   "http://localhost:13000",
+// ];
+// app.use(
+//   cors({
+//     origin: (origin, callback) => {
+//       if (!origin || whitelist.includes(origin)) {
+//         callback(null, true);
+//       } else {
+//         callback(new Error("Not allowed by CORS"));
+//       }
+//     },
+//     methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+//     allowedHeaders: "Content-Type,Authorization",
+//     credentials: true,
+//   })
+// );
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.set("trust proxy", 1);
@@ -98,8 +98,8 @@ Promise.all([
       }),
       cookie: {
         maxAge: 30 * 24 * 60 * 60 * 1000,
-        secure: process.env.NODE_ENV === "development" ? false : true,
-        httpOnly: process.env.NODE_ENV === "development" ? false : true,
+        // secure: process.env.NODE_ENV === "development" ? false : true,
+        // httpOnly: process.env.NODE_ENV === "development" ? false : true,
         sameSite: process.env.NODE_ENV === "development" ? false : "none",
       },
       secret: sessionSecret,
