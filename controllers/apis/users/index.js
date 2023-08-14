@@ -4,6 +4,7 @@ const EditUser = require("./edit-user.js");
 const GetUsers = require("./get-users.js");
 const Logout = require("./logout.js");
 const DeleteUser = require("./delete-user.js");
+const Me = require("./me.js");
 
 module.exports = {
   AddUser,
@@ -12,4 +13,5 @@ module.exports = {
   GetUsers,
   Logout,
   DeleteUser,
+  Me,
 };

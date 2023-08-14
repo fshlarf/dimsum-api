@@ -127,6 +127,7 @@ Promise.all([
   app.get("/api/users", UserApi.GetUsers(deps));
   app.patch("/api/users/:id", UserApi.EditUser(deps));
   app.delete("/api/users/:id", UserApi.DeleteUser(deps));
+  app.delete("/api/users/me", UserApi.Me(deps));
 
   // announcementApi
   app.post(
@@ -144,6 +145,10 @@ Promise.all([
     AnnouncementApi.EditAnnouncement(deps)
   );
   app.get("/api/announcements", AnnouncementApi.GetAnnouncement(deps));
+  app.get(
+    "/api/customer/announcements",
+    AnnouncementApi.GetAnnouncementC(deps)
+  );
 
   // articleApi
   app.post("/api/articles", upload.single("file"), ArticleApi.AddArticle(deps));
@@ -155,12 +160,15 @@ Promise.all([
   );
   app.get("/api/articles", ArticleApi.GetArticles(deps));
   app.get("/api/articles/:id", ArticleApi.GetArticleById(deps));
+  app.get("/api/customer/articles", ArticleApi.GetArticlesC(deps));
+  app.get("/api/customer/articles/:id", ArticleApi.GetArticleByIdC(deps));
 
   // categoryApi
   app.post("/api/categories", CategoryApi.AddCategory(deps));
   app.delete("/api/categories/:id", CategoryApi.DeleteCategory(deps));
   app.patch("/api/categories/:id", CategoryApi.EditCategory(deps));
   app.get("/api/categories", CategoryApi.GetCategories(deps));
+  app.get("/api/customer/categories", CategoryApi.GetCategoriesC(deps));
   app.get("/api/categories/:id", CategoryApi.GetCategoryById(deps));
 
   // portfolioApi
@@ -176,6 +184,7 @@ Promise.all([
     PortfolioApi.EditPortfolio(deps)
   );
   app.get("/api/portfolios", PortfolioApi.GetPortfolios(deps));
+  app.get("/api/customer/portfolios", PortfolioApi.GetPortfoliosC(deps));
   app.get("/api/portfolios/:id", PortfolioApi.GetPortfolioById(deps));
 
   // productApi
@@ -188,12 +197,15 @@ Promise.all([
   );
   app.get("/api/products", ProductApi.GetProducts(deps));
   app.get("/api/products/:id", ProductApi.GetProductById(deps));
+  app.get("/api/customer/products", ProductApi.GetProductsC(deps));
+  app.get("/api/customer/products/:id", ProductApi.GetProductByIdC(deps));
 
   // rewardApi
   app.post("/api/rewards", RewardApi.AddReward(deps));
   app.delete("/api/rewards/:id", RewardApi.DeleteReward(deps));
   app.patch("/api/rewards/:id", RewardApi.EditReward(deps));
   app.get("/api/rewards", RewardApi.GetRewards(deps));
+  app.get("/api/customer/rewards", RewardApi.GetRewardsC(deps));
   app.get("/api/rewards/:id", RewardApi.GetRewardById(deps));
 
   app.use((err, req, res, next) => {
