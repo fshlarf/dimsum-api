@@ -127,7 +127,7 @@ Promise.all([
   app.get("/api/users", UserApi.GetUsers(deps));
   app.patch("/api/users/:id", UserApi.EditUser(deps));
   app.delete("/api/users/:id", UserApi.DeleteUser(deps));
-  app.delete("/api/users/me", UserApi.Me(deps));
+  app.get("/api/users/me", UserApi.Me(deps));
 
   // announcementApi
   app.post(
