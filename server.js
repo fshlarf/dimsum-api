@@ -65,6 +65,7 @@ app.use(
     },
     methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
     allowedHeaders: "Content-Type,Authorization",
+    credentials: true,
   })
 );
 app.use(bodyParser.json());
@@ -95,11 +96,11 @@ Promise.all([
       store: new (connectPgSimple(expressSession))({
         conObject: pgConfig,
       }),
-      cookie: { maxAge: 30 * 24 * 60 * 60 * 1000 },
+      cookie: { maxAge: 30 * 24 * 60 * 60 * 1000, sameSite: "none" },
       secret: sessionSecret,
       resave: false,
       saveUninitialized: false,
-      sameSite: "none",
+      // sameSite: "none",
     })
   );
   app.set("view engine", "ejs");
