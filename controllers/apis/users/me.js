@@ -19,7 +19,7 @@ module.exports = function ({ pgClientPool }) {
         if (result.rows.length > 0) {
           userData = result.rows[0];
         } else {
-          return res.status(404).json({ error: "user not found" });
+          return res.status(401).json({ error: "user not found" });
         }
       } catch (e) {
         return next(new Error(e));
