@@ -53,6 +53,7 @@ const whitelist = [
   "https://admin.produsendimsum.com",
   "https://www.admin.produsendimsum.com",
   "http://localhost:13000",
+  "http://localhost:3000",
 ];
 app.use(
   cors({
