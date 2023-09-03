@@ -4,6 +4,7 @@ module.exports = function ({ pgClientPool }) {
   return async function (req, res, next) {
     try {
       const { page, limit, search } = req.query;
+      const baseUrl = process.env.BASE_URL_API;
 
       const queryLimit = limit ? parseInt(limit) : 20;
       const queryPage = page ? parseInt(page) : 1;
