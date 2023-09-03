@@ -5,6 +5,7 @@ module.exports = function ({ pgClientPool }) {
     try {
       const { page, limit, search } = req.query;
       const { user } = req.session;
+      const baseUrl = process.env.BASE_URL_API;
 
       if (!user) {
         return res.status(401).json({ error: "unauthorized" });
