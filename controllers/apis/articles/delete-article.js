@@ -38,9 +38,11 @@ module.exports = function ({ pgClientPool }) {
         await fs.unlink(filePath);
       } catch (error) {
         console.log("failed to delete file: " + error);
-        return res
-          .status(500)
-          .json({ error: `Error deleting article image: ${error}` });
+        if (error.code !== "ENOENT") {
+          return res
+            .status(500)
+            .json({ error: `Error deleting article image: ${error}` });
+        }
       }
     }
 

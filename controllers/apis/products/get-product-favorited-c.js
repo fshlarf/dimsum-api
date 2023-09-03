@@ -3,18 +3,26 @@ const convertSnakeToCamelCase = require("../../../helpers/utils");
 module.exports = function ({ pgClientPool }) {
   return async function (req, res, next) {
     try {
-      // get announcement
-      let announcement;
+      const baseUrl = process.env.BASE_URL_API;
+
+      // get products
+      let getList;
       try {
         const result = await pgClientPool.query(
-          "SELECT * FROM announcements ORDER BY id DESC LIMIT 1"
+          "SELECT * FROM products WHERE is_favorited = $1 ORDER BY id ASC",
+          [true]
         );
-        announcement = result.rows[0];
+        getList = result.rows;
       } catch (error) {
         return next(new Error(error));
       }
 
-      let data = convertSnakeToCamelCase(announcement);
+      let data = getList.map((product) => {
+        return {
+          ...convertSnakeToCamelCase(product),
+          imageLink: `${baseUrl}/api/bucket/images/products/${product.file_name}`,
+        };
+      });
 
       const ress = { data };
       res.status(200).json(ress);

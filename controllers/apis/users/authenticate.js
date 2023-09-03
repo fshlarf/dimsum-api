@@ -1,6 +1,5 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-// import jwt from "jsonwebtoken";
 
 module.exports = function ({ pgClientPool }) {
   return async function (req, res, next) {

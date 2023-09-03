@@ -1,4 +1,3 @@
-// import { convertSnakeToCamelCase } from "../../../helpers/utils";
 const convertSnakeToCamelCase = require("../../../helpers/utils");
 
 module.exports = function ({ pgClientPool }) {
@@ -6,6 +5,7 @@ module.exports = function ({ pgClientPool }) {
     try {
       const { page, limit, search, categoryId } = req.query;
       const { user } = req.session;
+      const baseUrl = process.env.BASE_URL_API;
 
       if (!user) {
         return res.status(401).json({ error: "unauthorized" });
@@ -19,7 +19,7 @@ module.exports = function ({ pgClientPool }) {
       let getList;
       try {
         const result = await pgClientPool.query(
-          "SELECT * FROM products WHERE ($1::text IS NULL OR LOWER(name) LIKE LOWER($1)) AND ($4::integer IS NULL OR category_id = $4) LIMIT $2::int OFFSET $3::int",
+          "SELECT * FROM products WHERE ($1::text IS NULL OR LOWER(name) LIKE LOWER($1)) AND ($4::integer IS NULL OR category_id = $4) ORDER BY id ASC LIMIT $2::int OFFSET $3::int",
           [
             search ? `%${search}%` : null,
             queryLimit,
@@ -27,9 +27,34 @@ module.exports = function ({ pgClientPool }) {
             categoryId ? categoryId : null,
           ]
         );
-        getList = result.rows;
+        getList = result.rows.map((product) => {
+          return {
+            ...convertSnakeToCamelCase(product),
+            imageLink: `${baseUrl}/api/bucket/images/products/${product.file_name}`,
+          };
+        });
       } catch (error) {
         return next(new Error(error));
+      }
+
+      for (let i = 0; i < getList.length; i++) {
+        const product = getList[i];
+        let variants;
+        try {
+          const getVariant = await pgClientPool.query(
+            "SELECT * FROM product_variants WHERE product_id = $1",
+            [product.id]
+          );
+          variants = getVariant.rows.map((variant) => {
+            return convertSnakeToCamelCase(variant);
+          });
+          getList[i] = {
+            ...getList[i],
+            variants: variants,
+          };
+        } catch (error) {
+          return next(new Error(error));
+        }
       }
 
       // get total
@@ -44,9 +69,7 @@ module.exports = function ({ pgClientPool }) {
         return next(new Error(error));
       }
 
-      let data = getList.map((product) => {
-        return convertSnakeToCamelCase(product);
-      });
+      let data = getList;
 
       const pagination = {
         currentPage: queryPage,

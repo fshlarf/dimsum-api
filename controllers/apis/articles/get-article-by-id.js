@@ -1,4 +1,3 @@
-// import { convertSnakeToCamelCase } from "../../../helpers/utils";
 const convertSnakeToCamelCase = require("../../../helpers/utils");
 
 module.exports = function ({ pgClientPool }) {

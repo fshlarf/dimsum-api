@@ -3,50 +3,51 @@ const convertSnakeToCamelCase = require("../../../helpers/utils");
 module.exports = function ({ pgClientPool }) {
   return async function (req, res, next) {
     try {
+      const { productId } = req.params;
       const { user } = req.session;
-      const { id } = req.params;
+      const baseUrl = process.env.BASE_URL_API;
 
       if (!user) {
         return res.status(401).json({ error: "unauthorized" });
       }
-      if (!id) {
-        return res.status(400).json({ error: "id is required" });
+      if (!productId) {
+        return res.status(400).json({ error: "productId is required" });
       }
 
       // get product
       let product;
       try {
-        const result = await pgClientPool.query(
+        const getProduct = await pgClientPool.query(
           "SELECT * FROM products WHERE id = $1",
-          [id]
+          [productId]
         );
-        if (result.rows.length == 0) {
+        if (getProduct.rows.length == 0) {
           return res.status(404).json({ error: "product not found" });
         }
-        product = result.rows[0];
+        product = {
+          ...convertSnakeToCamelCase(getProduct.rows[0]),
+          imageLink: `${baseUrl}/api/bucket/images/products/${getProduct.rows[0].file_name}`,
+        };
       } catch (error) {
         return next(new Error(error));
       }
 
-      // get variants
-      let variants = null;
+      //   get variants
+      let variants;
       try {
-        const result = await pgClientPool.query(
+        const getVariants = await pgClientPool.query(
           "SELECT * FROM product_variants WHERE product_id = $1",
-          [product.id]
+          [productId]
         );
-        if (result.rows.length == 0) {
-          return res.status(404).json({ error: "product variants not found" });
-        }
-        variants = result.rows.map((variant) => {
-          return convertSnakeToCamelCase(variant);
-        });
+        variants = getVariants.rows.map((variant) =>
+          convertSnakeToCamelCase(variant)
+        );
       } catch (error) {
         return next(new Error(error));
       }
 
       let data = {
-        ...convertSnakeToCamelCase(product),
+        ...product,
         variants: variants,
       };
 

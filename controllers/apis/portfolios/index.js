@@ -4,6 +4,7 @@ const EditPortfolio = require("./edit-portfolio.js");
 const GetPortfolios = require("./get-portfolios.js");
 const GetPortfoliosC = require("./get-portfolios-c.js");
 const GetPortfolioById = require("./get-portfolio-by-id.js");
+const UpdatePortfolioSequence = require("./update-sequence.js");
 
 module.exports = {
   AddPortfolio,
@@ -12,4 +13,5 @@ module.exports = {
   GetPortfolios,
   GetPortfoliosC,
   GetPortfolioById,
+  UpdatePortfolioSequence,
 };

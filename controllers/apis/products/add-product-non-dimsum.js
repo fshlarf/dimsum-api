@@ -7,6 +7,7 @@ module.exports = function ({ pgClientPool }) {
     const {
       categoryId,
       name,
+      description,
       quantity,
       unit,
       packaging,
@@ -14,6 +15,7 @@ module.exports = function ({ pgClientPool }) {
       agentPrice,
     } = req.body;
     const file = req.file;
+    const isFavorite = false;
 
     if (!user) {
       return res.status(401).json({ error: "unauthorized" });
@@ -23,6 +25,9 @@ module.exports = function ({ pgClientPool }) {
     }
     if (!categoryId) {
       return res.status(400).json({ error: "categoryId is required" });
+    }
+    if (!description) {
+      return res.status(400).json({ error: "description is required" });
     }
     if (!quantity) {
       return res.status(400).json({ error: "quantity is required" });
@@ -64,37 +69,35 @@ module.exports = function ({ pgClientPool }) {
 
     // create product
     try {
+      await pgClientPool.query("BEGIN");
       let product;
+      const result = await pgClientPool.query(
+        "INSERT INTO products (category_id, name, is_favorited, file_name) VALUES ($1, $2, $3, $4) RETURNING *",
+        [categoryId, name, isFavorite, fileName]
+      );
+      product = result.rows[0];
+
       await pgClientPool.query(
-        "INSERT INTO products (category_id, name, quantity, unit, packaging, reseller_price, agent_price, file_name) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *",
+        "INSERT INTO product_variants (product_id, description, quantity, unit, packaging, reseller_price, agent_price) VALUES ($1, $2, $3, $4, $5, $6, $7)",
         [
-          categoryId,
-          name,
+          product.id,
+          description,
           quantity,
           unit,
           packaging,
           resellerPrice,
           agentPrice,
-          fileName,
-        ],
-        (error, result) => {
-          if (error) {
-            if (error.code == "23505") {
-              res.locals.statusCode = 402;
-              return next(new Error(`${name} is already exists`));
-            } else {
-              return next(error);
-            }
-          }
-
-          product = result.rows[0];
-          res.status(201);
-          return res.json({
-            message: `product with ID: ${product.id} is created`,
-          });
-        }
+        ]
       );
+
+      await pgClientPool.query("COMMIT");
+
+      res.status(201);
+      return res.json({
+        message: `product with ID: ${product.id} is created`,
+      });
     } catch (e) {
+      await pgClientPool.query("ROLLBACK");
       res.locals.statusCode = 500;
       next(e);
     }

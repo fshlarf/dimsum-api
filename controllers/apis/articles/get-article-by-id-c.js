@@ -1,10 +1,10 @@
-// import { convertSnakeToCamelCase } from "../../../helpers/utils";
 const convertSnakeToCamelCase = require("../../../helpers/utils");
 
 module.exports = function ({ pgClientPool }) {
   return async function (req, res, next) {
     try {
       const { id } = req.params;
+      const baseUrl = process.env.BASE_URL_API;
       if (!id) {
         return res.status(400).json({ error: "id is required" });
       }
@@ -24,7 +24,10 @@ module.exports = function ({ pgClientPool }) {
         return next(new Error(error));
       }
 
-      let data = convertSnakeToCamelCase(article);
+      let data = {
+        ...convertSnakeToCamelCase(article),
+        imageLink: `${baseUrl}/api/bucket/images/articles/${article.file_name}`,
+      };
 
       const ress = { data };
       res.status(200).json(ress);

@@ -3,7 +3,11 @@ const bcrypt = require("bcrypt");
 module.exports = function ({ pgClientPool }) {
   return async function (req, res, next) {
     const { name, phone, email, password } = req.body;
+    const { user } = req.session;
 
+    if (!user) {
+      return res.status(401).json({ error: "unauthorized" });
+    }
     if (!name) {
       return res.status(400).json({ error: "name is required" });
     }
@@ -18,7 +22,7 @@ module.exports = function ({ pgClientPool }) {
     }
 
     try {
-      let user;
+      let newUser;
       const hashedPassword = bcrypt.hashSync(password, 10);
       // create user
       await pgClientPool.query(
@@ -34,9 +38,11 @@ module.exports = function ({ pgClientPool }) {
             }
           }
 
-          user = result.rows[0];
+          newUser = result.rows[0];
           res.status(201);
-          return res.json({ message: `user with ID: ${user.id} is created` });
+          return res.json({
+            message: `user with ID: ${newUser.id} is created`,
+          });
         }
       );
     } catch (e) {

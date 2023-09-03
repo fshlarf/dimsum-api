@@ -37,26 +37,30 @@ module.exports = function ({ pgClientPool }) {
         await fs.unlink(filePath);
       } catch (error) {
         console.log("failed to delete file: " + error);
-        return res
-          .status(500)
-          .json({ error: `Error deleting product image: ${error}` });
+        if (error.code !== "ENOENT") {
+          return res
+            .status(500)
+            .json({ error: `Error deleting product image: ${error}` });
+        }
       }
     }
 
-    // delete product
+    // delete product & variant
     try {
+      await pgClientPool.query("BEGIN");
       await pgClientPool.query(
-        "DELETE FROM products WHERE id = $1",
-        [id],
-        (error) => {
-          if (error) {
-            return next(error);
-          }
-          res.status(201);
-          return res.json({ message: `product with ID: ${id} is deleted` });
-        }
+        "DELETE FROM product_variants WHERE product_id = $1",
+        [id]
       );
+
+      await pgClientPool.query("DELETE FROM products WHERE id = $1", [id]);
+
+      await pgClientPool.query("COMMIT");
+
+      res.status(201);
+      return res.json({ message: `product with ID: ${id} is deleted` });
     } catch (e) {
+      await pgClientPool.query("ROLLBACK");
       res.locals.statusCode = 500;
       next(e);
     }

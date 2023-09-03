@@ -16,31 +16,31 @@ module.exports = function ({ pgClientPool }) {
     // delete image file
     let fileName;
     try {
-      const getPortfolio = await pgClientPool.query(
-        "SELECT * FROM portfolios WHERE id = $1",
+      const getPartner = await pgClientPool.query(
+        "SELECT * FROM partners WHERE id = $1",
         [id]
       );
-      if (getPortfolio.rows.length === 0) {
-        return res.status(404).json({ error: "portfolio not found" });
+      if (getPartner.rows.length === 0) {
+        return res.status(404).json({ error: "partner not found" });
       }
-      fileName = getPortfolio.rows[0].icon_name;
+      fileName = getPartner.rows[0].photo_filename;
     } catch (error) {
       return next(error);
     }
     if (fileName) {
       const filePath = path.join(
         process.cwd(),
-        `public/images/portfolio`,
+        `public/images/pertners`,
         fileName
       );
       try {
         await fs.unlink(filePath);
       } catch (error) {
-        console.log("failed to delete file: " + error);
         if (error.code !== "ENOENT") {
+          console.log("failed to delete file: " + error);
           return res
             .status(500)
-            .json({ error: `Error deleting portfolio icon: ${error}` });
+            .json({ error: `Error deleting partner profile image: ${error}` });
         }
       }
     }
@@ -48,14 +48,14 @@ module.exports = function ({ pgClientPool }) {
     // delete product
     try {
       await pgClientPool.query(
-        "DELETE FROM portfolios WHERE id = $1",
+        "DELETE FROM partners WHERE id = $1",
         [id],
         (error) => {
           if (error) {
             return next(error);
           }
           res.status(201);
-          return res.json({ message: `portfolio with ID: ${id} is deleted` });
+          return res.json({ message: `partner with ID: ${id} is deleted` });
         }
       );
     } catch (e) {

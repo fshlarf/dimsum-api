@@ -22,7 +22,9 @@ const ArticleApi = require("./controllers/apis/articles/index.js");
 const CategoryApi = require("./controllers/apis/categories/index.js");
 const PortfolioApi = require("./controllers/apis/portfolios/index.js");
 const ProductApi = require("./controllers/apis/products/index.js");
+const ProductVariantApi = require("./controllers/apis/product_variants/index.js");
 const RewardApi = require("./controllers/apis/rewards/index.js");
+const PartnerApi = require("./controllers/apis/partners/index.js");
 
 dotenv.config();
 const { Pool: PgPool } = pg;
@@ -184,30 +186,83 @@ Promise.all([
     upload.single("file"),
     PortfolioApi.EditPortfolio(deps)
   );
+  app.patch(
+    "/api/portfolios/:id/sequence",
+    PortfolioApi.UpdatePortfolioSequence(deps)
+  );
   app.get("/api/portfolios", PortfolioApi.GetPortfolios(deps));
   app.get("/api/customer/portfolios", PortfolioApi.GetPortfoliosC(deps));
   app.get("/api/portfolios/:id", PortfolioApi.GetPortfolioById(deps));
 
   // productApi
-  app.post("/api/products", upload.single("file"), ProductApi.AddProduct(deps));
+  app.post(
+    "/api/products/dimsum",
+    upload.single("file"),
+    ProductApi.AddProductDimsum(deps)
+  );
+  app.post(
+    "/api/products/non-dimsum",
+    upload.single("file"),
+    ProductApi.AddProductNonDimsum(deps)
+  );
   app.delete("/api/products/:id", ProductApi.DeleteProduct(deps));
   app.patch(
     "/api/products/:id",
     upload.single("file"),
-    ProductApi.EditProduct(deps)
+    ProductApi.EditProductDimsum(deps)
+  );
+  app.patch(
+    "/api/products/:id/variant/:variantId",
+    upload.single("file"),
+    ProductApi.EditProductNonDimsum(deps)
+  );
+  app.patch(
+    "/api/products/:id/favorited/add",
+    ProductApi.AddProductToFavorited(deps)
+  );
+  app.patch(
+    "/api/products/:id/favorited/remove",
+    ProductApi.RemoveProductFromFavorited(deps)
   );
   app.get("/api/products", ProductApi.GetProducts(deps));
   app.get("/api/products/:id", ProductApi.GetProductById(deps));
   app.get("/api/customer/products", ProductApi.GetProductsC(deps));
+  app.get(
+    "/api/customer/products/favorited",
+    ProductApi.GetFavoritedProductsC(deps)
+  );
   app.get("/api/customer/products/:id", ProductApi.GetProductByIdC(deps));
+
+  // productVariantApi
+  app.get(
+    "/api/customer/product-variants",
+    ProductVariantApi.GetProductVariantsC(deps)
+  );
+  app.get(
+    "/api/product-variants/product/:productId",
+    ProductVariantApi.GetProductVariantByProductId(deps)
+  );
 
   // rewardApi
   app.post("/api/rewards", RewardApi.AddReward(deps));
   app.delete("/api/rewards/:id", RewardApi.DeleteReward(deps));
   app.patch("/api/rewards/:id", RewardApi.EditReward(deps));
+  app.patch("/api/rewards/:id/sequence", RewardApi.UpdateRewardSequence(deps));
   app.get("/api/rewards", RewardApi.GetRewards(deps));
   app.get("/api/customer/rewards", RewardApi.GetRewardsC(deps));
   app.get("/api/rewards/:id", RewardApi.GetRewardById(deps));
+
+  // partnerApi
+  app.post("/api/partners", upload.single("file"), PartnerApi.AddPartner(deps));
+  app.delete("/api/partners/:id", PartnerApi.DeletePartner(deps));
+  app.patch(
+    "/api/partners/:id",
+    upload.single("file"),
+    PartnerApi.EditPartner(deps)
+  );
+  app.get("/api/partners/:id", PartnerApi.GetPartnerById(deps));
+  app.get("/api/partners", PartnerApi.GetPartners(deps));
+  app.get("/api/customer/partners", PartnerApi.GetPartnersC(deps));
 
   app.use((err, req, res, next) => {
     res.status(res.locals.statusCode || 500);

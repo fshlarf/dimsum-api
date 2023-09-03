@@ -4,21 +4,17 @@ module.exports = function ({ pgClientPool }) {
   return async function (req, res, next) {
     try {
       const { page, limit, search } = req.query;
-      const { user } = req.session;
-
-      if (!user) {
-        return res.status(401).json({ error: "unauthorized" });
-      }
+      const baseUrl = process.env.BASE_URL_API;
 
       const queryLimit = limit ? parseInt(limit) : 20;
       const queryPage = page ? parseInt(page) : 1;
       const offset = (queryPage - 1) * queryLimit;
 
-      // get user
+      // get partners
       let getList;
       try {
         const result = await pgClientPool.query(
-          "SELECT * FROM users WHERE ($1::text IS NULL OR LOWER(name) LIKE LOWER($1) OR LOWER(email) LIKE LOWER($1) OR LOWER(phone) LIKE LOWER($1)) AND email != 'system@mail.com' LIMIT $2::int OFFSET $3::int",
+          "SELECT p.*, r.name AS reward_name FROM partners p LEFT JOIN rewards r ON r.id = p.reward_id WHERE ($1::text IS NULL OR LOWER(p.name) LIKE LOWER($1) OR LOWER(p.email) LIKE LOWER($1) OR LOWER(p.phone_number) LIKE LOWER($1)) ORDER BY p.id DESC LIMIT $2::int OFFSET $3::int",
           [search ? `%${search}%` : null, queryLimit, offset]
         );
         getList = result.rows;
@@ -30,7 +26,7 @@ module.exports = function ({ pgClientPool }) {
       let total;
       try {
         const totalRes = await pgClientPool.query(
-          "SELECT COUNT(*) FROM users WHERE ($1::text IS NULL OR LOWER(name) LIKE LOWER($1) OR LOWER(email) LIKE LOWER($1) OR LOWER(phone) LIKE LOWER($1)) AND email != 'system@mail.com'",
+          "SELECT COUNT(*) FROM partners WHERE ($1::text IS NULL OR LOWER(name) LIKE LOWER($1) OR LOWER(email) LIKE LOWER($1) OR LOWER(phone_number) LIKE LOWER($1))",
           [search ? `%${search}%` : null]
         );
         total = parseInt(totalRes.rows[0].count);
@@ -38,9 +34,11 @@ module.exports = function ({ pgClientPool }) {
         return next(new Error(error));
       }
 
-      let data = [];
-      getList.forEach((user) => {
-        data.push(convertSnakeToCamelCase(user));
+      let data = getList.map((partner) => {
+        return {
+          ...convertSnakeToCamelCase(partner),
+          profileImage: `${baseUrl}/api/bucket/images/partners/${partner.photo_filename}`,
+        };
       });
 
       const pagination = {

@@ -1,4 +1,3 @@
-// import { convertSnakeToCamelCase } from "../../../helpers/utils";
 const convertSnakeToCamelCase = require("../../../helpers/utils");
 
 module.exports = function ({ pgClientPool }) {
@@ -14,7 +13,7 @@ module.exports = function ({ pgClientPool }) {
       let getList;
       try {
         const result = await pgClientPool.query(
-          "SELECT * FROM rewards WHERE ($1::text IS NULL OR LOWER(name) LIKE LOWER($1)) ORDER BY sequence LIMIT $2::int OFFSET $3::int",
+          "SELECT * FROM rewards WHERE ($1::text IS NULL OR LOWER(name) LIKE LOWER($1)) ORDER BY sequence ASC LIMIT $2::int OFFSET $3::int",
           [search ? `%${search}%` : null, queryLimit, offset]
         );
         getList = result.rows;

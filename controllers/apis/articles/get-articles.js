@@ -1,4 +1,3 @@
-// import { convertSnakeToCamelCase } from "../../../helpers/utils";
 const convertSnakeToCamelCase = require("../../../helpers/utils");
 
 module.exports = function ({ pgClientPool }) {
@@ -40,7 +39,10 @@ module.exports = function ({ pgClientPool }) {
       }
 
       let data = getList.map((article) => {
-        return convertSnakeToCamelCase(article);
+        return {
+          ...convertSnakeToCamelCase(article),
+          imageLink: `${baseUrl}/api/bucket/images/articles/${article.file_name}`,
+        };
       });
 
       const pagination = {

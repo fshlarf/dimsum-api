@@ -4,6 +4,7 @@ const EditReward = require("./edit-reward.js");
 const GetRewards = require("./get-rewards.js");
 const GetRewardsC = require("./get-rewards-c.js");
 const GetRewardById = require("./get-reward-by-id.js");
+const UpdateRewardSequence = require("./update-sequence.js");
 
 module.exports = {
   AddReward,
@@ -12,4 +13,5 @@ module.exports = {
   GetRewards,
   GetRewardsC,
   GetRewardById,
+  UpdateRewardSequence,
 };

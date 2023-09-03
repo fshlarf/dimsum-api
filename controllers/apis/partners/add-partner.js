@@ -3,44 +3,36 @@ const fs = require("fs/promises");
 
 module.exports = function ({ pgClientPool }) {
   return async function (req, res, next) {
-    const { user } = req.session;
-    const { name, link } = req.body;
+    const { rewardId, name, phone, email, address, joinDate, testimony } =
+      req.body;
     const file = req.file;
+    const { user } = req.session;
 
     if (!user) {
       return res.status(401).json({ error: "unauthorized" });
     }
+    if (!rewardId) {
+      return res.status(400).json({ error: "rewardId is required" });
+    }
     if (!name) {
       return res.status(400).json({ error: "name is required" });
     }
-    if (!link) {
-      return res.status(400).json({ error: "link is required" });
+    if (!address) {
+      return res.status(400).json({ error: "address is required" });
+    }
+    if (!testimony) {
+      return res.status(400).json({ error: "testimony is required" });
     }
     if (!file) {
       return res.status(400).json({ error: "file is required" });
     }
 
-    // check existing announcements
-    try {
-      const getExistingAnnouncements = await pgClientPool.query(
-        "SELECT * FROM announcements"
-      );
-      if (getExistingAnnouncements.rows.length > 0) {
-        return res
-          .status(400)
-          .json({ error: "Already reached 1 announcement limit" });
-      }
-    } catch (error) {
-      console.log(error);
-      return res.status(500).json({ error: error });
-    }
-
-    // upload announcement image
+    // upload profile image
     let fileName = null;
     fileName = `${Date.now()}-${file.originalname}`;
     const destinationPath = path.join(
       process.cwd(),
-      `public/images/announcement/`,
+      `public/images/partners/`,
       fileName
     );
     // create the directory
@@ -51,24 +43,33 @@ module.exports = function ({ pgClientPool }) {
       await fs.writeFile(destinationPath, file.buffer);
     } catch (error) {
       console.log(error);
-      return res.status(500).json({ error: "error saving announcement image" });
+      return res.status(500).json({ error: "error saving profile image" });
     }
 
-    // create article
     try {
-      let announcement;
+      let partner;
+      // create partner
       await pgClientPool.query(
-        "INSERT INTO announcements (name, link, file_name) VALUES ($1, $2, $3) RETURNING *",
-        [name, link, fileName],
+        "INSERT INTO partners (reward_id, name, phone_number, email, address, join_date, testimony, photo_filename) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *",
+        [
+          rewardId,
+          name,
+          phone,
+          email,
+          address,
+          joinDate ? joinDate : null,
+          testimony,
+          fileName,
+        ],
         (error, result) => {
           if (error) {
+            console.log(error);
             return next(error);
           }
-
-          announcement = result.rows[0];
+          partner = result.rows[0];
           res.status(201);
           return res.json({
-            message: `announcement with ID: ${announcement.id} is created`,
+            message: `partner with ID: ${partner.id} is created`,
           });
         }
       );

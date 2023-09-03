@@ -1,4 +1,3 @@
-// import { convertSnakeToCamelCase } from "../../../helpers/utils";
 const convertSnakeToCamelCase = require("../../../helpers/utils");
 
 module.exports = function ({ pgClientPool }) {
@@ -7,7 +6,9 @@ module.exports = function ({ pgClientPool }) {
       // get portfolios
       let getList;
       try {
-        const result = await pgClientPool.query("SELECT * FROM portfolios");
+        const result = await pgClientPool.query(
+          "SELECT * FROM portfolios ORDER BY sequence ASC"
+        );
         getList = result.rows;
       } catch (error) {
         return next(new Error(error));
