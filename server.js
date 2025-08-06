@@ -42,6 +42,13 @@ const upload = multer({
 
 const {
   SESSION_SECRET: sessionSecret,
+  DATABASE_URL: databaseUrl,
+  DATABASE_PRIVATE_URL: databasePrivateUrl,
+  PGHOST: pgHost,
+  PGPORT: pgPort,
+  PGUSER: pgUser,
+  PGPASSWORD: pgPassword,
+  PGDATABASE: pgDatabase,
   POSTGRES_HOST: postgresHost,
   POSTGRES_PORT: postgresPort,
   POSTGRES_USERNAME: postgresUsername,
@@ -49,11 +56,15 @@ const {
   POSTGRES_DATABASE_NAME: postgresDatabaseName,
 } = process.env;
 
+// Try different possible database URL formats
+const finalDatabaseUrl = databaseUrl || databasePrivateUrl;
+
 const whitelist = [
   "https://produsendimsum.com",
-  "https://www.produsendimsum.com",
+  "https://www.produsendimsum.com", 
   "https://admin.produsendimsum.com",
   "https://www.admin.produsendimsum.com",
+  "https://dimsum-api-production.up.railway.app",
   "http://localhost:13000",
   "http://localhost:3000",
 ];
@@ -75,13 +86,27 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.set("trust proxy", 1);
 
-const pgConfig = {
-  host: postgresHost,
-  port: postgresPort,
-  user: postgresUsername,
-  password: postgresPassword,
-  database: postgresDatabaseName,
-};
+// Debug database configuration
+console.log('Database configuration:', {
+  hasDatabaseUrl: !!finalDatabaseUrl,
+  hasPgHost: !!pgHost,
+  postgresHost,
+  railwayEnv: process.env.RAILWAY_ENVIRONMENT
+});
+
+const pgConfig = finalDatabaseUrl 
+  ? {
+      connectionString: finalDatabaseUrl,
+      ssl: { rejectUnauthorized: false }
+    }
+  : {
+      host: pgHost || postgresHost || 'localhost',
+      port: parseInt(pgPort || postgresPort) || 5432,
+      user: pgUser || postgresUsername || 'dimsum',
+      password: pgPassword || postgresPassword || 'dimsum',
+      database: pgDatabase || postgresDatabaseName || 'dimsum',
+      ssl: process.env.RAILWAY_ENVIRONMENT ? { rejectUnauthorized: false } : false
+    };
 const pgClientPool = new PgPool(pgConfig);
 
 Promise.all([
@@ -97,7 +122,7 @@ Promise.all([
   app.use(
     expressSession({
       store: new (connectPgSimple(expressSession))({
-        conObject: pgConfig,
+        conObject: finalDatabaseUrl ? { connectionString: finalDatabaseUrl, ssl: { rejectUnauthorized: false } } : pgConfig,
       }),
       cookie: {
         maxAge: 30 * 24 * 60 * 60 * 1000,
