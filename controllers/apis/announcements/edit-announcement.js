@@ -1,5 +1,8 @@
-const path = require("path")
-const fs = require("fs/promises")
+const {
+  uploadImage,
+  deleteImage,
+  extractPublicId,
+} = require("../../../helpers/cloudinary")
 
 module.exports = function ({ pgClientPool }) {
   return async function (req, res, next) {
@@ -39,53 +42,48 @@ module.exports = function ({ pgClientPool }) {
       return next(error)
     }
 
-    let updatedFileName = announcement.file_name
-    const existingImageFileName = announcement.file_name
-    const fileName = file.originalname
+    let updatedImageUrl = announcement.file_name // This will now store the Cloudinary URL
+    const existingImageUrl = announcement.file_name
 
-    if (existingImageFileName !== fileName) {
-      // delete existing image
-      const filePath = path.join(
-        process.cwd(),
-        `public/images/announcement`,
-        existingImageFileName
-      )
-      try {
-        await fs.unlink(filePath)
-      } catch (error) {
-        console.log("failed to delete file: " + error)
-        if (error.code !== "ENOENT") {
-          return res
-            .status(500)
-            .json({ error: `Error deleting announcement image: ${error}` })
+    // Always upload new image to Cloudinary when file is provided
+    try {
+      // Delete existing image from Cloudinary if it exists
+      if (existingImageUrl) {
+        const publicId = extractPublicId(existingImageUrl)
+        if (publicId) {
+          try {
+            await deleteImage(publicId)
+            console.log(`Deleted existing announcement image: ${publicId}`)
+          } catch (error) {
+            console.log(
+              `Failed to delete existing announcement image: ${publicId}`,
+              error
+            )
+            // Continue with upload even if deletion fails
+          }
         }
       }
 
-      // upload new image
-      updatedFileName = `${Date.now()}-${file.originalname}`
-      const destinationPath = path.join(
-        process.cwd(),
-        `public/images/announcement/`,
-        updatedFileName
+      // Upload new image to Cloudinary
+      const uploadResult = await uploadImage(
+        file.buffer,
+        "dimsum/announcements",
+        `announcement_${id}_${Date.now()}`
       )
-      // create the directory
-      const directory = path.dirname(destinationPath)
-      await fs.mkdir(directory, { recursive: true })
-      // Move the file to the directory
-      try {
-        await fs.writeFile(destinationPath, file.buffer)
-      } catch (error) {
-        console.log(error)
-        return res
-          .status(500)
-          .json({ error: "error saving announcement image" })
-      }
+
+      updatedImageUrl = uploadResult.secure_url
+      console.log(`Uploaded new announcement image: ${uploadResult.public_id}`)
+    } catch (error) {
+      console.log("Error handling announcement image upload:", error)
+      return res
+        .status(500)
+        .json({ error: "Error processing announcement image" })
     }
 
     try {
       await pgClientPool.query(
         "UPDATE announcements SET name = $1, link = $2, file_name = $3, is_active = $4 WHERE id = $5",
-        [name, link, updatedFileName, active, id],
+        [name, link, updatedImageUrl, active, id],
         (error, result) => {
           if (error) {
             return next(error)

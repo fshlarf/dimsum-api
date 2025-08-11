@@ -1,47 +1,41 @@
-const path = require("path");
-const fs = require("fs/promises");
+const { deleteImage, extractPublicId } = require("../../../helpers/cloudinary")
 
 module.exports = function ({ pgClientPool }) {
   return async function (req, res, next) {
-    const { user } = req.session;
-    const { id } = req.params;
+    const { user } = req.session
+    const { id } = req.params
 
     if (!user) {
-      return res.status(401).json({ error: "unauthorized" });
+      return res.status(401).json({ error: "unauthorized" })
     }
     if (!id) {
-      return res.status(400).json({ error: "id is required" });
+      return res.status(400).json({ error: "id is required" })
     }
 
-    let fileName;
+    let imageUrl
     try {
       const getArticle = await pgClientPool.query(
         "SELECT * FROM articles WHERE id = $1",
         [id]
-      );
+      )
       if (getArticle.rows.length === 0) {
-        return res.status(404).json({ error: "Article not found" });
+        return res.status(404).json({ error: "Article not found" })
       }
-      fileName = getArticle.rows[0].file_name;
+      imageUrl = getArticle.rows[0].file_name
     } catch (error) {
-      return next(error);
+      return next(error)
     }
 
-    // delete image file
-    if (fileName) {
-      const filePath = path.join(
-        process.cwd(),
-        `public/images/articles`,
-        fileName
-      );
-      try {
-        await fs.unlink(filePath);
-      } catch (error) {
-        console.log("failed to delete file: " + error);
-        if (error.code !== "ENOENT") {
-          return res
-            .status(500)
-            .json({ error: `Error deleting article image: ${error}` });
+    // delete image from Cloudinary
+    if (imageUrl) {
+      const publicId = extractPublicId(imageUrl)
+      if (publicId) {
+        try {
+          await deleteImage(publicId)
+          console.log(`Deleted article image from Cloudinary: ${publicId}`)
+        } catch (error) {
+          console.log("Failed to delete article image from Cloudinary:", error)
+          // Continue with article deletion even if image deletion fails
         }
       }
     }
@@ -53,15 +47,15 @@ module.exports = function ({ pgClientPool }) {
         [id],
         (error) => {
           if (error) {
-            return next(error);
+            return next(error)
           }
-          res.status(201);
-          return res.json({ message: `article with ID: ${id} is deleted` });
+          res.status(201)
+          return res.json({ message: `article with ID: ${id} is deleted` })
         }
-      );
+      )
     } catch (e) {
-      res.locals.statusCode = 500;
-      next(e);
+      res.locals.statusCode = 500
+      next(e)
     }
-  };
-};
+  }
+}

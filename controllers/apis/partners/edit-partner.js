@@ -1,88 +1,85 @@
-const path = require("path");
-const fs = require("fs/promises");
+const {
+  uploadImage,
+  deleteImage,
+  extractPublicId,
+} = require("../../../helpers/cloudinary")
 
 module.exports = function ({ pgClientPool }) {
   return async function (req, res, next) {
-    const { user } = req.session;
-    const { id } = req.params;
+    const { user } = req.session
+    const { id } = req.params
     const { name, rewardId, email, phone, address, joinDate, testimony } =
-      req.body;
-    const file = req.file;
+      req.body
+    const file = req.file
 
     if (!user) {
-      return res.status(401).json({ error: "unauthorized" });
+      return res.status(401).json({ error: "unauthorized" })
     }
     if (!rewardId) {
-      return res.status(400).json({ error: "rewardId is required" });
+      return res.status(400).json({ error: "rewardId is required" })
     }
     if (!name) {
-      return res.status(400).json({ error: "name is required" });
+      return res.status(400).json({ error: "name is required" })
     }
     if (!address) {
-      return res.status(400).json({ error: "address is required" });
+      return res.status(400).json({ error: "address is required" })
     }
     if (!testimony) {
-      return res.status(400).json({ error: "testimony is required" });
+      return res.status(400).json({ error: "testimony is required" })
     }
     if (!file) {
-      return res.status(400).json({ error: "file is required" });
+      return res.status(400).json({ error: "file is required" })
     }
 
-    let partner;
+    let partner
     try {
       const getPartner = await pgClientPool.query(
         "SELECT * FROM partners WHERE id = $1",
         [id]
-      );
+      )
       if (getPartner.rows.length == 0) {
-        return res.status(404).json({ error: "partner not found" });
+        return res.status(404).json({ error: "partner not found" })
       }
-      partner = getPartner.rows[0];
+      partner = getPartner.rows[0]
     } catch (error) {
-      return next(error);
+      return next(error)
     }
 
-    let updatedFileName = partner.photo_filename;
-    const existingImageFileName = partner.photo_filename;
-    const fileName = file.originalname;
+    let updatedImageUrl = partner.photo_filename // This will now store the Cloudinary URL
+    const existingImageUrl = partner.photo_filename
+    const fileName = file.originalname
 
-    if (existingImageFileName && existingImageFileName !== fileName) {
-      // delete existing image
-      const filePath = path.join(
-        process.cwd(),
-        `public/images/partners`,
-        existingImageFileName
-      );
-      try {
-        await fs.unlink(filePath);
-      } catch (error) {
-        console.log("failed to delete file: " + error);
-        if (error.code !== "ENOENT") {
-          return res
-            .status(500)
-            .json({ error: `Error deleting partner profile image: ${error}` });
+    // Always upload new image to Cloudinary when file is provided
+    try {
+      // Delete existing image from Cloudinary if it exists
+      if (existingImageUrl) {
+        const publicId = extractPublicId(existingImageUrl)
+        if (publicId) {
+          try {
+            await deleteImage(publicId)
+            console.log(`Deleted existing partner image: ${publicId}`)
+          } catch (error) {
+            console.log(
+              `Failed to delete existing partner image: ${publicId}`,
+              error
+            )
+            // Continue with upload even if deletion fails
+          }
         }
       }
 
-      // upload new image
-      updatedFileName = `${Date.now()}-${file.originalname}`;
-      const destinationPath = path.join(
-        process.cwd(),
-        `public/images/partners/`,
-        updatedFileName
-      );
-      // create the directory
-      const directory = path.dirname(destinationPath);
-      await fs.mkdir(directory, { recursive: true });
-      // Move the file to the directory
-      try {
-        await fs.writeFile(destinationPath, file.buffer);
-      } catch (error) {
-        console.log(error);
-        return res
-          .status(500)
-          .json({ error: "error saving partner profile image" });
-      }
+      // Upload new image to Cloudinary
+      const uploadResult = await uploadImage(
+        file.buffer,
+        "dimsum/partners",
+        `partner_${id}_${Date.now()}`
+      )
+
+      updatedImageUrl = uploadResult.secure_url
+      console.log(`Uploaded new partner image: ${uploadResult.public_id}`)
+    } catch (error) {
+      console.log("Error handling partner image upload:", error)
+      return res.status(500).json({ error: "Error processing partner image" })
     }
 
     try {
@@ -96,21 +93,21 @@ module.exports = function ({ pgClientPool }) {
           address,
           joinDate,
           testimony,
-          updatedFileName,
+          updatedImageUrl,
           id,
         ],
         (error, result) => {
           if (error) {
-            return next(error);
+            return next(error)
           }
-          partner = result.rows[0];
-          res.status(201);
-          return res.json({ message: `partner with ID: ${id} is updated` });
+          partner = result.rows[0]
+          res.status(201)
+          return res.json({ message: `partner with ID: ${id} is updated` })
         }
-      );
+      )
     } catch (e) {
-      res.locals.statusCode = 500;
-      next(e);
+      res.locals.statusCode = 500
+      next(e)
     }
-  };
-};
+  }
+}
